@@ -51,3 +51,34 @@ def test_training_request(client: FlaskClient):
     assert res.status_code // 100 == 2
     data = res.json
     assert len(data.get('train_id', '')) > 0
+
+
+def get_training_id(client: FlaskClient) -> str:
+    payload = {
+        'parameter1': 'value1',
+        'parameter2': 'value2',
+    }
+    res = client.post(f'{BASE_URL}/train', json=payload, headers={'x-api-key': 'vicky-api-key'})
+    assert res.status_code // 100 == 2
+    train_id = res.json.get('train_id')
+    assert train_id is not None
+    return train_id
+
+
+def test_training_status(client: FlaskClient):
+    train_id = get_training_id(client)
+    res = client.get(f'{BASE_URL}/train-status/{train_id}', headers={'x-api-key': 'vicky-api-key'})
+    assert res.status_code // 100 == 2
+    data = res.json
+    assert data.get('completed', -1) == 0
+
+
+def test_infer(client: FlaskClient):
+    train_id = get_training_id(client)
+    payload = {
+        'prompt': 'astronaut riding a horse on Mars'
+    }
+    res = client.post(f'{BASE_URL}/infer/{train_id}', json=payload, headers={'x-api-key': 'vicky-api-key'})
+    assert res.status_code // 100 == 2
+    data = res.json
+    assert data.get('image_ids') is not None

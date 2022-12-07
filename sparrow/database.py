@@ -71,5 +71,12 @@ class DatabaseSparrow:
         conn.execute(ins_1)
         return train_id
 
+    def get_training_status(self, conn, user_id: int, train_id: str) -> int:
+        sel_1 = (select([self.training_requests.c.completed])
+                 .where(self.training_requests.c.id == train_id)
+                 .where(self.training_requests.c.user_id == user_id))
+        rec_1 = conn.execute(sel_1).fetchone()
+        return rec_1[0] if rec_1 is not None else 0
+
 
 db_sparrow = DatabaseSparrow()

@@ -46,10 +46,16 @@ def api_train(user_id: int):
 @bp.route('/train-status/<train_id>')
 @user_feed
 def api_train_status(user_id: int, train_id: str):
-    return jsonify(completed=100)
+    with db_sparrow.engine.connect() as conn:
+        completed = db_sparrow.get_training_status(conn, user_id, train_id)
+    return jsonify(completed=completed)
 
 
-@bp.route('/infer/<train_id>')
+@bp.route('/infer/<train_id>', methods=['POST'])
 @user_feed
 def api_infer(user_id: int, train_id: str):
-    return jsonify(status='ok')
+    payload = request.json
+    prompt = payload['prompt']
+    # here you must run your inference, that I will assume returns images
+    # it is better though you return identifiers to images available on a CDN
+    return jsonify(image_ids=[1, 2, 3])
