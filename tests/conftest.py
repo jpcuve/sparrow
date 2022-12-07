@@ -1,7 +1,12 @@
+from concurrent.futures import ThreadPoolExecutor
+from multiprocessing import Process
+
 import pytest
 from flask.testing import FlaskClient
 
 from sparrow import create_app
+from sparrow.client import Client
+import requests
 
 
 @pytest.fixture(scope="module")
@@ -10,3 +15,27 @@ def client() -> FlaskClient:
     app = create_app()
     with app.test_client() as client:
         yield client
+
+
+def start_app(port: int):
+    app = create_app()
+    app.run(port=port)
+
+
+@pytest.fixture(scope="module")
+def sparrow_client() -> Client:
+    app = create_app()
+    port = 5000
+    process = Process(target=start_app, args=(port,))
+    process.start()
+    # wait for server to be up
+    while True:
+        try:
+            requests.get(f'http://localhost:{port}/api/status')
+            break
+        except:
+            pass
+    # server is up
+    client = Client(f'localhost:{port}', 'vicky-api-key')
+    yield client
+    process.terminate()
