@@ -1,5 +1,3 @@
-import uuid
-
 from flask import Blueprint, jsonify, request
 
 from sparrow.database import db_sparrow
