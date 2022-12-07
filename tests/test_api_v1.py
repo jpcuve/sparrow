@@ -40,3 +40,14 @@ def test_image_upload(client: FlaskClient):
     assert res.status_code // 100 == 2
     data = res.json
     assert len(data.get('image_ids', [])) == 3
+
+
+def test_training_request(client: FlaskClient):
+    payload = {
+        'parameter1': 'value1',
+        'parameter2': 'value2',
+    }
+    res = client.post(f'{BASE_URL}/train', json=payload, headers={'x-api-key': 'vicky-api-key'})
+    assert res.status_code // 100 == 2
+    data = res.json
+    assert len(data.get('train_id', '')) > 0

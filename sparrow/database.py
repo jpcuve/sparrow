@@ -1,4 +1,6 @@
-from typing import List
+import json
+import uuid
+from typing import List, Dict
 
 from flask import Flask
 from sqlalchemy import MetaData, Column, Table, Integer, String, UniqueConstraint, ForeignKey, Text, select, Identity
@@ -58,6 +60,16 @@ class DatabaseSparrow:
         image_id = conn.execute(ins_1).inserted_primary_key[0]
         return image_id
 
+    def insert_training_request(self, conn, user_id: int, parameters: Dict) -> str:
+        train_id = str(uuid.uuid4())
+        ins_1 = self.training_requests.insert().values(
+            id=train_id,
+            user_id=user_id,
+            parameters=json.dumps(parameters),
+            completed=0,
+        )
+        conn.execute(ins_1)
+        return train_id
 
 
 db_sparrow = DatabaseSparrow()

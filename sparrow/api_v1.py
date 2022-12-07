@@ -37,10 +37,10 @@ def api_upload(user_id: int):
 @bp.route('/train', methods=['POST'])
 @user_feed
 def api_train(user_id: int):
-    train_id = str(uuid.uuid4())
     train_parameters = request.json
-
-    return jsonify(id=train_id)
+    with db_sparrow.engine.connect() as conn:
+        train_id = db_sparrow.insert_training_request(conn, user_id, train_parameters)
+    return jsonify(train_id=train_id)
 
 
 @bp.route('/train-status/<train_id>')
