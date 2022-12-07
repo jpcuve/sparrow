@@ -2,6 +2,7 @@ import uuid
 
 from flask import Blueprint, jsonify, request
 
+from sparrow.database import db_sparrow
 from sparrow.helper import user_feed
 
 bp = Blueprint('api_v1', __name__, url_prefix='/api/v1')
@@ -22,7 +23,15 @@ def api_protected(user_id: int):
 @bp.route('/upload', methods=['POST'])
 @user_feed
 def api_upload(user_id: int):
-    return jsonify(status='ok')
+    payload = request.json
+    image_ids = []
+    with db_sparrow.engine.connect() as conn:
+        for data in payload:
+            prompts = data.get('prompts', [])
+            image = data.get('image')
+            image_id = db_sparrow.insert_image(conn, user_id, prompts, image)
+            image_ids.append(image_id)
+    return jsonify(image_ids=image_ids)
 
 
 @bp.route('/train', methods=['POST'])
