@@ -24,7 +24,6 @@ def start_app(port: int):
 
 @pytest.fixture(scope="module")
 def sparrow_client() -> Client:
-    app = create_app()
     port = 5000
     process = Process(target=start_app, args=(port,))
     process.start()
