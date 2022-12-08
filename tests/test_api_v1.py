@@ -34,7 +34,7 @@ def test_image_upload(client: FlaskClient):
             data = f.read()
         # read prompts from .txt file with same name, if exists
         prompts = []
-        path_txt = path / '..' / path.parts[-1].replace('.png', '.txt')
+        path_txt = path.parent / path.parts[-1].replace('.png', '.txt')
         if path_txt.exists():
             with open(path_txt, 'r') as f:
                 for line in f.readlines():
