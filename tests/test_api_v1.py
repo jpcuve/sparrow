@@ -32,8 +32,15 @@ def test_image_upload(client: FlaskClient):
     for path in (Path('.') / 'images').glob('*.png'):
         with open(path, 'rb') as f:
             data = f.read()
+        # read prompts from .txt file with same name, if exists
+        prompts = []
+        path_txt = path / '..' / path.parts[-1].replace('.png', '.txt')
+        if path_txt.exists():
+            with open(path_txt, 'r') as f:
+                for line in f.readlines():
+                    prompts.append(line.strip())
         payload.append({
-            'prompts': ['blue sparrow', 'blue bird'],
+            'prompts': prompts,
             'image': base64.b64encode(data).decode('ascii')
         })
     res = client.post(f'{BASE_URL}/upload', json=payload, headers={'x-api-key': 'vicky-api-key'})

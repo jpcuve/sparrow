@@ -1,4 +1,3 @@
-from concurrent.futures import ThreadPoolExecutor
 from multiprocessing import Process
 
 import pytest
