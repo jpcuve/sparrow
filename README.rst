@@ -43,7 +43,7 @@ contribution to Sparrow, see the `contributing guidelines`_.
 Donate
 ------
 
-I need a lot of money to support my lifestyle, so `please donate today`_.
+I need a lot of money to support my lavish lifestyle, so `please donate today`_.
 
 .. _please donate today: https://www.sparrow-python.com/donate
 
