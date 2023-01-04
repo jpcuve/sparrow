@@ -1,0 +1,20 @@
+<svg width="170" height="170" xmlns="http://www.w3.org/2000/svg">
+	<style>
+    circle {
+		fill: black;
+    }
+	path {
+		fill: #6e72a6;
+	}
+	</style>
+	<path d="M 50 25 a 25 25 0 0 1 -25 25 a 15 15 0 0 0 0 30 a 25 25 0 0 1 25 25 a 15 15 0 1 0 15 -15 a 25 25 0 0 1 0 -50 a 15 15 0 1 0 -15 -15"/>
+	<circle cx="65" cy="25" r="7"/>
+	<circle cx="25" cy="65" r="7"/>
+	<circle cx="65" cy="105" r="7"/>
+	<circle cx="65" cy="65" r="15"/>
+	<path d="M 105 130 a 15 15 0 1 0 15 15 a 25 25 0 0 1 25 -25 a 15 15 0 0 0 0 -30 a 25 25 0 0 1 -25 -25 a 15 15 0 1 0 -15 15 a 25 25 0 0 1 0 50"/>
+	<circle cx="105" cy="65" r="7"/>
+	<circle cx="145" cy="105" r="7"/>
+	<circle cx="105" cy="145" r="7"/>
+	<circle cx="105" cy="105" r="15"/>
+</svg>

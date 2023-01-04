@@ -3,12 +3,15 @@ import os
 
 from flask import Flask, jsonify
 from flask_cors import CORS
+from flask_httpauth import HTTPBasicAuth
 from flask_sqlalchemy import SQLAlchemy
+from werkzeug.security import check_password_hash
 
 CONFIGURATION_LOCATION = 'FLASK_CONFIG'
 
 db = SQLAlchemy()
 
+auth = HTTPBasicAuth()
 
 def create_app() -> Flask:
     app = Flask(__name__, static_folder='../app/build', static_url_path='/')
@@ -28,6 +31,10 @@ def create_app() -> Flask:
     db.init_app(app)
     from sparrow.database import db_sparrow
     db_sparrow.init_app(app)
+
+    # web application initialization
+    from sparrow import web
+    app.register_blueprint(web.bp)
 
     # blueprint initializations (API endpoints, one file per version)
     from sparrow import api_v1
@@ -51,8 +58,22 @@ def create_app() -> Flask:
                                 app.logger.error(e)
                                 transaction.rollback()
 
+    @auth.verify_password
+    def verify_password(username: str, password: str) -> str:
+        users = app.config['WEB_USERS']
+        if username in users and check_password_hash(users[username], password):
+            return username
+
     @app.errorhandler(Exception)
     def handle_error(ex):
         return jsonify(error=str(ex)), 500
+
+    @app.route('/')
+    def index():
+        return app.send_static_file('index.html')
+
+    @app.errorhandler(404)
+    def not_found(e):
+        return app.send_static_file('index.html')
 
     return app
