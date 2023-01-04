@@ -3,7 +3,7 @@ import {Outlet} from 'react-router-dom'
 import {useSelector} from 'react-redux'
 import {RootState} from '../store'
 import {Feedback} from '../entities/Feedback'
-import {Affix, Box, Paper, Notification} from '@mantine/core'
+import {Affix, Box, Notification} from '@mantine/core'
 
 const MainLayout: FC = () => {
   const feedbacks = useSelector<RootState, Feedback[]>(state => state.application.feedbacks)
