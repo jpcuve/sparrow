@@ -6,13 +6,14 @@ RUN apt-get install xz-utils
 RUN apt-get -y install curl
 
 # Download latest nodejs binary
-RUN curl https://nodejs.org/dist/v19.3.0/node-v19.3.0-linux-x64.tar.xz -O
+ENV NODE_VERSION=v19.3.0
+RUN curl https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-x64.tar.xz -O
 
 # Extract & install
-RUN tar -xf node-v19.3.0-linux-x64.tar.xz
-RUN ln -s /node-v19.3.0-linux-x64/bin/node /usr/local/bin/node
-RUN ln -s /node-v19.3.0-linux-x64/bin/npm /usr/local/bin/npm
-RUN ln -s /node-v19.3.0-linux-x64/bin/npx /usr/local/bin/npx
+RUN tar -xf node-${NODE_VERSION}-linux-x64.tar.xz
+RUN ln -s /node-${NODE_VERSION}-linux-x64/bin/node /usr/local/bin/node
+RUN ln -s /node-${NODE_VERSION}-linux-x64/bin/npm /usr/local/bin/npm
+RUN ln -s /node-${NODE_VERSION}-linux-x64/bin/npx /usr/local/bin/npx
 
 # Front end
 COPY ./app/ /app/app/

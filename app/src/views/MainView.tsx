@@ -2,17 +2,15 @@ import {FC, useState} from 'react'
 import SignInForm from '../forms/SignInForm'
 import {SignIn} from '../entities/SignIn'
 import {state} from '../store'
-import api from '../api'
 import useAuthentication from '../hooks/AuthenticationHook'
 import {useNavigate} from 'react-router-dom'
-import {Box, Button, Group, Modal} from '@mantine/core'
+import {Box, Button, Card, Center, Text, Modal} from '@mantine/core'
 
 const MainView: FC = () => {
   const navigate = useNavigate()
   const {signIn, signOut} = useAuthentication()
   const [open, setOpen] = useState<boolean>(false)
   const ok = async (value: SignIn) => {
-    setOpen(false)
     try {
       await signIn(value.email, value.password)
       navigate('/app')
@@ -21,13 +19,18 @@ const MainView: FC = () => {
       signOut()
       state.notify({level: 'error', message: 'Bad credentials'})
     }
+    setOpen(false)
   }
   return (
-    <Box>
-      <Group>
-        <Button type="button" onClick={() => setOpen(true)}>App</Button>
-        <Button type="button" onClick={() => state.notify({level: 'success', message: 'OKEEE'})}>Snackbar</Button>
-      </Group>
+    <Box h="100vh">
+      <Center h="100%">
+        <Card shadow="lg">
+          <Text size="lg" mb="lg">The Sparrow application</Text>
+          <Center>
+            <Button type="button" onClick={() => setOpen(true)}>Sign-in</Button>
+          </Center>
+        </Card>
+      </Center>
       <Modal title="Sign-in" opened={open} onClose={() => setOpen(false)} centered>
         <SignInForm onCancel={() => setOpen(false)} onOk={ok}/>
       </Modal>

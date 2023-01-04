@@ -11,14 +11,10 @@ const useAuthentication = () => {
       const token = btoa(`${username}:${password}`);
       console.log(`Token: ${token}`)
       localStorage.setItem(tokenKey, token)
-      try{
-        await api.status()
-        console.log(`Logged in user: ${username}`)
-        localStorage.setItem(visitorKey, username)
-        return username
-      } catch (e: any){
-        console.log(`Failed to get user info`)
-      }
+      await api.status()
+      console.log(`Logged in user: ${username}`)
+      localStorage.setItem(visitorKey, username)
+      return username
     },
     signOut: () => {
       localStorage.removeItem(tokenKey)

@@ -3,7 +3,7 @@ import {Outlet} from 'react-router-dom'
 import {useSelector} from 'react-redux'
 import {RootState} from '../store'
 import {Feedback} from '../entities/Feedback'
-import {Affix, Box, Paper} from '@mantine/core'
+import {Affix, Box, Paper, Notification} from '@mantine/core'
 
 const MainLayout: FC = () => {
   const feedbacks = useSelector<RootState, Feedback[]>(state => state.application.feedbacks)
@@ -14,15 +14,15 @@ const MainLayout: FC = () => {
         {feedbacks.map((it, i) => {
           switch (it.level){
             case 'error':
-              return (<Paper key={i} c="white" bg="red" p="xs" m="xs">{it.message}</Paper>)
+              return (<Notification key={i} color="red" title="Error">{it.message}</Notification>)
             case 'success':
-              return (<Paper key={i} c="white" bg="green" p="xs" m="xs">{it.message}</Paper>)
+              return (<Notification key={i} color="green" title="Success">{it.message}</Notification>)
             case 'warning':
-              return (<Paper key={i} c="black" bg="yellow" p="xs" m="xs">{it.message}</Paper>)
+              return (<Notification key={i} color="yellow" title="Warning">{it.message}</Notification>)
             case 'info':
-              return (<Paper key={i} c="white" bg="blue" p="xs" m="xs">{it.message}</Paper>)
+              return (<Notification key={i} color="blue" title="Information">{it.message}</Notification>)
             default:
-              return (<Paper key={i} p="xs" m="xs">{it.message}</Paper>)
+              return (<Notification key={i}>{it.message}</Notification>)
           }
         })}
       </Affix>

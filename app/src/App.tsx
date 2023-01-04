@@ -18,15 +18,11 @@ function App() {
             {value: 'developer', label: 'Developer'}
           ]}/>}>
             <Route index element={<AppView/>}/>
-            <Route path="home" element={<SubAppLayout items={[
-              {value: 'overview', label: 'Overview'},
-            ]}/>}>
-              <Route index element={<AppView/>}/>
-              <Route path="overview" element={<AppView/>}/>
-            </Route>
+            <Route path="home" element={<AppView/>}/>
             <Route path="developer" element={<SubAppLayout items={[
               {value: 'test', label: 'Test'},
             ]}/>}>
+              <Route index element={<TestView/>}/>
               <Route path="test" element={<TestView/>}/>
             </Route>
           </Route>
