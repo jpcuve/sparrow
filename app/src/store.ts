@@ -53,4 +53,8 @@ export const state = {
       store.dispatch(updateFeedbacks(fs.filter(it => it !== feedback)))
     }, timeout)
   },
+  notifyError: (message: string) => state.notify({level: 'error', message}),
+  notifySuccess: (message: string) => state.notify({level: 'success', message}),
+  notifyWarning: (message: string) => state.notify({level: 'warning', message}),
+  notifyInfo: (message: string) => state.notify({level: 'info', message}),
 }

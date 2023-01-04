@@ -1,4 +1,4 @@
-import {FC, forwardRef, useState} from 'react'
+import {FC, forwardRef} from 'react'
 import {Avatar, Box, Button, Group, MantineColor, Text, SelectItemProps, Autocomplete} from '@mantine/core'
 import {state} from '../store'
 
@@ -40,7 +40,6 @@ const TestView:FC = () => {
       <div ref={ref} {...others}>
         <Group noWrap>
           <Avatar src={image} />
-
           <div>
             <Text>{value}</Text>
             <Text size="xs" color="dimmed">
@@ -51,12 +50,9 @@ const TestView:FC = () => {
       </div>
     )
   );
-
-  const [providerId, setProviderId] = useState<number>(0)
-
   return (
     <Box>
-      <Button onClick={() => state.notify({level: 'warning', message: 'Hello'})}>Open snackbar</Button>
+      <Button onClick={() => state.notifyWarning('Hello')}>Open snackbar</Button>
       <Autocomplete
         label="Choose employee of the month"
         placeholder="Pick one"
@@ -67,8 +63,6 @@ const TestView:FC = () => {
           item.description.toLowerCase().includes(value.toLowerCase().trim())
         }
       />
-      <br/>
-      <span>{JSON.stringify(providerId)}</span>
     </Box>
   )
 }

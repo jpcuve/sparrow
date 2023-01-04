@@ -3,7 +3,8 @@ import uuid
 from typing import List, Dict
 
 from flask import Flask
-from sqlalchemy import MetaData, Column, Table, Integer, String, UniqueConstraint, ForeignKey, Text, select, Identity
+from sqlalchemy import MetaData, Column, Table, Integer, String, UniqueConstraint, ForeignKey, Text, select, Identity, \
+    Float
 
 from sparrow import db
 
@@ -37,6 +38,11 @@ class DatabaseSparrow:
             'inference_requests', self.metadata,
             Column('id', Integer, nullable=False, primary_key=True),
             Column('training_request_id', None, ForeignKey('training_requests.id'))
+        )
+        self.processes = Table(
+            'processes', self.metadata,
+            Column('key', String, nullable=False, primary_key=True),
+            Column('progress', Float, nullable=False)
         )
 
     def init_app(self, app: Flask):
@@ -77,6 +83,26 @@ class DatabaseSparrow:
                  .where(self.training_requests.c.user_id == user_id))
         rec_1 = conn.execute(sel_1).fetchone()
         return rec_1[0] if rec_1 is not None else 0
+
+    def acquire_lock(self, conn, key: str) -> bool:
+        sel_1 = (select([self.processes.c.progress]).where(self.processes.c.key == key))
+        rec_1 = conn.execute(sel_1).fetchone()
+        if rec_1 is None:
+            ins_1 = (self.processes.insert().values(key=key, progress=1.0e-10))
+            conn.execute(ins_1)
+            return True
+        elif rec_1[0] == 0:
+            upd_1 = (self.processes.update().values(progress=1.0e-10).where(self.processes.c.key == key))
+            conn.execute(upd_1)
+            return True
+        return False
+
+    def release_lock(self, conn, key: str):
+        sel_1 = (select([self.processes.c.progress]).where(self.processes.c.key == key))
+        rec_1 = conn.execute(sel_1).fetchone()
+        if rec_1 is not None:
+            upd_1 = (self.processes.update().values(progress=0).where(self.processes.c.key == key))
+            conn.execute(upd_1)
 
 
 db_sparrow = DatabaseSparrow()

@@ -7,6 +7,8 @@ from flask_httpauth import HTTPBasicAuth
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import check_password_hash
 
+from sparrow.task import long_running_task
+
 CONFIGURATION_LOCATION = 'FLASK_CONFIG'
 
 db = SQLAlchemy()
@@ -31,6 +33,10 @@ def create_app() -> Flask:
     db.init_app(app)
     from sparrow.database import db_sparrow
     db_sparrow.init_app(app)
+
+    # runner initialization
+    from sparrow.ext.ext_runner import runner
+    runner.init_app(app)
 
     # web application initialization
     from sparrow import web
@@ -57,6 +63,7 @@ def create_app() -> Flask:
                             except Exception as e:
                                 app.logger.error(e)
                                 transaction.rollback()
+        runner.submit('test', long_running_task)
 
     @auth.verify_password
     def verify_password(username: str, password: str) -> str:

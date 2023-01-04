@@ -14,10 +14,10 @@ const MainView: FC = () => {
     try {
       await signIn(value.email, value.password)
       navigate('/app')
-      state.notify({level: 'success', message: 'Signed in'})
+      state.notifySuccess('Signed in')
     } catch (e: any) {
       signOut()
-      state.notify({level: 'error', message: 'Bad credentials'})
+      state.notifyError('Bad credentials')
     }
     setOpen(false)
   }

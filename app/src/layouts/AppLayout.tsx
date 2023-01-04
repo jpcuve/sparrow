@@ -27,7 +27,7 @@ const AppLayout: FC<AppLayoutProps> = props => {
       try {
         await api.perpetual()
       } catch (e: any){
-        state.notify({level: 'error', message: e.message})
+        state.notifyError(e.message)
       }
     })()
   }, [])
