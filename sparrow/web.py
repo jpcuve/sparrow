@@ -20,5 +20,5 @@ def web_perpetual():
 
 @bp.route('/long-process')
 def web_long_process():
-    runner.submit('test', long_running_task)
+    runner.submit('test', long_running_task, 10)
     return jsonify(status='ok')
