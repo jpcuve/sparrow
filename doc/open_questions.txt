@@ -1,5 +1,6 @@
-Only 2 genders? -> boolean
-What happens if a user submits a finetune job for which the model reference already exists in the db? error or replace?
-Can the gender of inference be different from the gender of the related finetune job?
-I think in your tables you are missing a creation date.
-There are many statuses (finetune job, inference job, aws instance)... statuses are always dangerous and should be avoided. So can you please give me a full list and what they mean.
+1. Only 2 genders? -> boolean
+2. What happens if a user submits a finetune job for which the model reference already exists in the db? error or replace?
+3. Can the gender of inference be different from the gender of the related finetune job?
+4. I think in your tables you are missing a creation date.
+5. There are many statuses (finetune job, inference job, aws instance)... statuses are always dangerous and should be avoided. So can you please give me a full list and what they mean.
+6. Document the API on swagger?
