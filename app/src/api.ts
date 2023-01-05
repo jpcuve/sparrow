@@ -26,6 +26,7 @@ class Api {
   async userinfo() { return remote.get<any>(`${this.identity}/userinfo`) }
 */
   async status() { return remote.get<any>(`${this.api}/`) }
+  async longProcess() { return remote.get<any>(`${this.api}/long-process`)}
   async perpetual() { state.updatePerpetual(await wrap(() => remote.get<Perpetual>(`${this.api}/perpetual`))) }
   async markers(type: string){ return remote.get<Marker[]>(`${this.api}/markers/${type}`)}
   async childOptions(type: string, parent: string[]){ return remote.post<Option[]>(`${this.api}/child-options/${type}`, parent)}

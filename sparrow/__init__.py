@@ -63,7 +63,6 @@ def create_app() -> Flask:
                             except Exception as e:
                                 app.logger.error(e)
                                 transaction.rollback()
-        runner.submit('test', long_running_task)
 
     @auth.verify_password
     def verify_password(username: str, password: str) -> str:

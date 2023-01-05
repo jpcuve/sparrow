@@ -25,7 +25,7 @@ const MainView: FC = () => {
     <Box h="100vh">
       <Center h="100%">
         <Card shadow="lg">
-          <Text size="lg" mb="lg">The Sparrow application</Text>
+          <Text size="lg" mb="lg" transform="uppercase">The Sparrow application</Text>
           <Center>
             <Button type="button" onClick={() => setOpen(true)}>Sign-in</Button>
           </Center>
