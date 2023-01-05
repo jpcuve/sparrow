@@ -39,8 +39,8 @@ def create_app() -> Flask:
     runner.init_app(app)
 
     # finetuner initialization
-    from sparrow.ext.ext_finetuner import finetuner
-    finetuner.init_app(app)
+    from sparrow.ext.ext_ai import ai
+    ai.init_app(app)
 
     # web application initialization
     from sparrow import web

@@ -1,7 +1,7 @@
 from flask import Flask
 
 
-class Finetuner:
+class Ai:
     def __init__(self, app: Flask = None):
         self.executor = None
         if app is not None:
@@ -17,4 +17,4 @@ class Finetuner:
         pass
 
 
-finetuner = Finetuner()
+ai = Ai()
