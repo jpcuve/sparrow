@@ -1,0 +1,3 @@
+Only 2 genders? -> boolean
+What happens if a user submits a finetune job for which the model reference already exists in the db? error or replace?
+Can the gender of inference be different from the gender of the related finetune job?

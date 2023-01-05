@@ -12,8 +12,8 @@ from sparrow.task import long_running_task
 CONFIGURATION_LOCATION = 'FLASK_CONFIG'
 
 db = SQLAlchemy()
-
 auth = HTTPBasicAuth()
+
 
 def create_app() -> Flask:
     app = Flask(__name__, static_folder='../app/build', static_url_path='/')
@@ -37,6 +37,10 @@ def create_app() -> Flask:
     # runner initialization
     from sparrow.ext.ext_runner import runner
     runner.init_app(app)
+
+    # finetuner initialization
+    from sparrow.ext.ext_finetuner import finetuner
+    finetuner.init_app(app)
 
     # web application initialization
     from sparrow import web

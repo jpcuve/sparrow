@@ -1,6 +1,4 @@
-import json
-import uuid
-from typing import List, Dict
+from typing import List
 
 from flask import Flask
 from sqlalchemy import MetaData, Column, Table, Integer, String, UniqueConstraint, ForeignKey, Text, select, Identity, \
@@ -20,29 +18,52 @@ class DatabaseSparrow:
             Column('api_key', String(64), nullable=False),
             UniqueConstraint('api_key')
         )
-        self.images = Table(
-            'images', self.metadata,
-            Column('id', Integer, Identity(), primary_key=True),
-            Column('prompts', Text, nullable=False),
-            Column('data', Text),
-            Column('user_id', None, ForeignKey('users.id')),
-        )
-        self.training_requests = Table(
-            'training_requests', self.metadata,
-            Column('id', String(64), nullable=False, primary_key=True),
-            Column('parameters', Text),
-            Column('completed', Integer, nullable=False),
-            Column('user_id', None, ForeignKey('users.id')),
-        )
-        self.inference_requests = Table(
-            'inference_requests', self.metadata,
-            Column('id', Integer, nullable=False, primary_key=True),
-            Column('training_request_id', None, ForeignKey('training_requests.id'))
-        )
         self.processes = Table(
             'processes', self.metadata,
             Column('key', String, nullable=False, primary_key=True),
             Column('progress', Float, nullable=False)
+        )
+        self.aws_instances = Table(
+            'aws_instances', self.metadata,
+            Column('id', Integer, Identity(), primary_key=True),
+            Column('aws_instance_id', String(32), nullable=False),
+            Column('status', String(16), nullable=False),
+            UniqueConstraint('aws_instance_id')
+        )
+        self.finetune_jobs = Table(
+            'finetune_jobs', self.metadata,
+            Column('id', Integer, Identity(), primary_key=True),
+            Column('model_reference', String(255), nullable=False),
+            Column('gender', String(16), nullable=False),
+            Column('max_train_steps', Integer, nullable=False),
+            Column('status', String(16), nullable=False),
+            Column('user_id', None, ForeignKey('users.id')),
+            UniqueConstraint('user_id', 'model_reference')
+        )
+        self.finetune_job_image_urls = Table(
+            'finetune_job_image_urls', self.metadata,
+            Column('id', Integer, Identity(), primary_key=True),
+            Column('url', String(2048), nullable=False),
+            Column('finetune_job_id', None, ForeignKey('finetune_jobs.id')),
+            UniqueConstraint('finetune_job_id', 'url')
+        )
+        self.inference_jobs = Table(
+            'inference_jobs', self.metadata,
+            Column('id', Integer, Identity(), primary_key=True),
+            Column('prompt', Text),
+            Column('negative_prompt', Text),
+            # gender??? not the same as finetune?
+            Column('num_inference_steps', Integer, nullable=False),
+            Column('num_images_per_prompt', Integer, nullable=False),
+            Column('guidance_scale', Float, nullable=False),
+            Column('status', String(16), nullable=False),
+            Column('finetune_job_id', None, ForeignKey('finetune_jobs.id'))
+        )
+        self.generated_images = Table(
+            'generated_images', self.metadata,
+            Column('url', String(2048), nullable=False),
+            Column('id', Integer, Identity(), primary_key=True),
+            Column('inference_job_id', None, ForeignKey('inference_jobs.id'))
         )
 
     def init_app(self, app: Flask):
@@ -57,32 +78,56 @@ class DatabaseSparrow:
         rec_1 = conn.execute(sel_1).fetchone()
         return rec_1[0] if rec_1 is not None else None
 
-    def insert_image(self, conn, user_id: int, prompts: List[str], data: str) -> int:
-        ins_1 = self.images.insert().values(
+    def insert_finetune_job(self, conn, user_id: int, model_reference: str, image_urls: List[str]) -> int:
+        ins_1 = self.finetune_jobs.insert().values(
             user_id=user_id,
-            prompts='|'.join(prompts),
-            data=data,
+            model_reference=model_reference,
+            gender='man',  # TODO
+            max_train_steps=5000,  # TODO
+            status='SUBMITTED',  # TODO
         )
-        image_id = conn.execute(ins_1).inserted_primary_key[0]
-        return image_id
+        finetune_job_id = conn.execute(ins_1).inserted_primary_key[0]
+        for image_url in image_urls:
+            ins_2 = self.finetune_job_image_urls.insert(
+                finetune_job_id=finetune_job_id,
+                url=image_url,
+            )
+            conn.execute(ins_2)
+        return finetune_job_id
 
-    def insert_training_request(self, conn, user_id: int, parameters: Dict) -> str:
-        train_id = str(uuid.uuid4())
-        ins_1 = self.training_requests.insert().values(
-            id=train_id,
-            user_id=user_id,
-            parameters=json.dumps(parameters),
-            completed=0,
-        )
-        conn.execute(ins_1)
-        return train_id
-
-    def get_training_status(self, conn, user_id: int, train_id: str) -> int:
-        sel_1 = (select([self.training_requests.c.completed])
-                 .where(self.training_requests.c.id == train_id)
-                 .where(self.training_requests.c.user_id == user_id))
+    def insert_inference_job(self, conn, user_id: int, model_reference: str, prompt: str, negative_prompt: str) -> int:
+        # first, find the corresponding finetune job
+        sel_1 = (select([self.finetune_jobs.c.id])
+                 .where(self.finetune_jobs.c.user_id == user_id)
+                 .where(self.finetune_jobs.c.model_reference == model_reference))
         rec_1 = conn.execute(sel_1).fetchone()
-        return rec_1[0] if rec_1 is not None else 0
+        if rec_1 is None:
+            raise RuntimeError("Model not found")
+        finetune_job_id = rec_1[0]
+        ins_1 = self.inference_jobs.insert().values(
+            user_id=user_id,
+            finetune_job_id=finetune_job_id,
+            prompt=prompt,
+            negative_prompt=negative_prompt,
+            gender='man',  # TODO
+            num_inference_steps=150,  # TODO
+            num_images_per_prompt=6,  # TODO
+            quidance_scale=6.5,  # TODO
+            status='SUBMITTED',  # TODO
+        )
+        inference_job_id = conn.execute(ins_1).inserted_primary_key[0]
+        return inference_job_id
+
+    def find_generated_image_urls(self, conn, user_id: int, inference_job_id: int) -> List[str]:
+        # ok here we have to be careful that the cannot not get urls for images that are not his, hence the join
+        sel_1 = (select([self.generated_images.c.url])
+                 .select_from(self.generated_images.join(self.inference_jobs,
+                                                         onclause=self.generated_images.c.inference_job_id == self.inference_jobs.c.id),
+                              self.inference_jobs.join(self.finetune_jobs,
+                                                       onclause=self.inference_jobs.c.finetune_job_id == self.finetune_jobs.c.id))
+                 .where(self.generated_images.c.inference_job_id == inference_job_id)
+                 .where(self.finetune_jobs.c.user_id == user_id))
+        return [rec_1[0] for rec_1 in conn.execute(sel_1).fetchall()]
 
     def acquire_lock(self, conn, key: str) -> bool:
         sel_1 = (select([self.processes.c.progress]).where(self.processes.c.key == key))

@@ -18,42 +18,40 @@ def api_protected(user_id: int):
     return jsonify(status='ok')
 
 
-@bp.route('/upload', methods=['POST'])
+@bp.route('/finetune-job', methods=['POST'])
 @user_feed
-def api_upload(user_id: int):
+def api_finetune_job(user_id: int):
     payload = request.json
-    image_ids = []
+    model_reference = payload.get('model_reference')
+    image_urls = payload.get('image_urls')
     with db_sparrow.engine.connect() as conn:
-        for data in payload:
-            prompts = data.get('prompts', [])
-            image = data.get('image')
-            image_id = db_sparrow.insert_image(conn, user_id, prompts, image)
-            image_ids.append(image_id)
-    return jsonify(image_ids=image_ids)
+        finetune_job_id = db_sparrow.insert_finetune_job(conn, user_id, model_reference, image_urls)
+    return jsonify(finetune_job_id=finetune_job_id)
 
 
-@bp.route('/train', methods=['POST'])
+@bp.route('/finetune-job-status/<finetune_job_id>')
 @user_feed
-def api_train(user_id: int):
-    train_parameters = request.json
+def api_finetune_job_status(user_id: int, finetune_job_id: int):
     with db_sparrow.engine.connect() as conn:
-        train_id = db_sparrow.insert_training_request(conn, user_id, train_parameters)
-    return jsonify(train_id=train_id)
+        status = db_sparrow.get_finetune_job_status(conn, user_id, finetune_job_id)
+    return jsonify(status=status)
 
 
-@bp.route('/train-status/<train_id>')
+@bp.route('/inference-job', methods=['POST'])
 @user_feed
-def api_train_status(user_id: int, train_id: str):
-    with db_sparrow.engine.connect() as conn:
-        completed = db_sparrow.get_training_status(conn, user_id, train_id)
-    return jsonify(completed=completed)
-
-
-@bp.route('/infer/<train_id>', methods=['POST'])
-@user_feed
-def api_infer(user_id: int, train_id: str):
+def api_inference_job(user_id: int):
     payload = request.json
-    prompt = payload['prompt']
-    # here you must run your inference, that I will assume returns images
-    # it is better though you return identifiers to images available on a CDN
-    return jsonify(image_ids=[1, 2, 3])
+    model_reference = payload.get('model_reference')
+    prompt = payload.get('prompt')
+    negative_prompt = payload.get('negative_prompt')
+    with db_sparrow.engine.connect() as conn:
+        inference_job_id = db_sparrow.insert_inference_job(conn, user_id, model_reference, prompt, negative_prompt)
+    return jsonify(inference_job_id=inference_job_id)
+
+
+@bp.route('/generated-images/<inference_job_id>')
+@user_feed
+def api_generated_images(user_id: int, inference_job_id: int):
+    with db_sparrow.engine.connect() as conn:
+        image_urls = db_sparrow.find_generated_image_urls(conn, user_id, inference_job_id)
+    return jsonify(image_urls=image_urls)
