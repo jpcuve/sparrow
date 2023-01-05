@@ -1,5 +1,4 @@
-import base64
-from pathlib import Path
+import uuid
 
 from flask.testing import FlaskClient
 
@@ -27,65 +26,73 @@ def test_protection(client: FlaskClient):
     assert res.status_code // 100 == 2
 
 
-def test_image_upload(client: FlaskClient):
-    payload = []
-    for path in (Path('.') / 'images').glob('*.png'):
-        with open(path, 'rb') as f:
-            data = f.read()
-        # read prompts from .txt file with same name, if exists
-        prompts = []
-        path_txt = path.parent / path.parts[-1].replace('.png', '.txt')
-        if path_txt.exists():
-            with open(path_txt, 'r') as f:
-                for line in f.readlines():
-                    prompts.append(line.strip())
-        payload.append({
-            'prompts': prompts,
-            'image': base64.b64encode(data).decode('ascii')
-        })
-    res = client.post(f'{BASE_URL}/upload', json=payload, headers={'x-api-key': 'vicky-api-key'})
-    assert res.status_code // 100 == 2
-    data = res.json
-    assert len(data.get('image_ids', [])) == 3
-
-
-def test_training_request(client: FlaskClient):
+def test_finetune_request(client: FlaskClient):
     payload = {
-        'parameter1': 'value1',
-        'parameter2': 'value2',
+        'model_reference': uuid.uuid4(),
+        'image_urls': ['url-1', 'url-2', 'url-3'],
     }
-    res = client.post(f'{BASE_URL}/train', json=payload, headers={'x-api-key': 'vicky-api-key'})
+    res = client.post(f'{BASE_URL}/finetune-job', json=payload, headers={'x-api-key': 'vicky-api-key'})
     assert res.status_code // 100 == 2
     data = res.json
-    assert len(data.get('train_id', '')) > 0
+    finetune_job_id = data.get('finetune_job_id')
+    assert finetune_job_id is not None
+    res = client.get(f'{BASE_URL}/finetune-job-status/{finetune_job_id}', headers={'x-api-key': 'vicky-api-key'})
+    assert res.status_code // 100 == 2
+    data = res.json
+    status = data.get('status')
+    assert status == 'SUBMITTED'
 
 
-def get_training_id(client: FlaskClient) -> str:
+def test_inference_request(client: FlaskClient):
+    model_reference = uuid.uuid4()
     payload = {
-        'parameter1': 'value1',
-        'parameter2': 'value2',
+        'model_reference': model_reference,
+        'image_urls': ['url-4', 'url-5', 'url-6'],
     }
-    res = client.post(f'{BASE_URL}/train', json=payload, headers={'x-api-key': 'vicky-api-key'})
-    assert res.status_code // 100 == 2
-    train_id = res.json.get('train_id')
-    assert train_id is not None
-    return train_id
-
-
-def test_training_status(client: FlaskClient):
-    train_id = get_training_id(client)
-    res = client.get(f'{BASE_URL}/train-status/{train_id}', headers={'x-api-key': 'vicky-api-key'})
+    res = client.post(f'{BASE_URL}/finetune-job', json=payload, headers={'x-api-key': 'vicky-api-key'})
     assert res.status_code // 100 == 2
     data = res.json
-    assert data.get('completed', -1) == 0
-
-
-def test_infer(client: FlaskClient):
-    train_id = get_training_id(client)
+    finetune_job_id = data.get('finetune_job_id')
+    assert finetune_job_id is not None
     payload = {
-        'prompt': 'astronaut riding a horse on Mars'
+        'model_reference': model_reference,
+        'prompt': 'My positive prompt',
+        'negative_prompt': 'My negative prompt'
     }
-    res = client.post(f'{BASE_URL}/infer/{train_id}', json=payload, headers={'x-api-key': 'vicky-api-key'})
+    res = client.post(f'{BASE_URL}/inference-job', json=payload, headers={'x-api-key': 'vicky-api-key'})
     assert res.status_code // 100 == 2
     data = res.json
-    assert data.get('image_ids') is not None
+    inference_job_id = data.get('inference_job_id')
+    assert inference_job_id is not None
+    res = client.get(f'{BASE_URL}/inference-job-status/{inference_job_id}', headers={'x-api-key': 'vicky-api-key'})
+    assert res.status_code // 100 == 2
+    data = res.json
+    status = data.get('status')
+    assert status == 'SUBMITTED'
+
+
+def test_generated_image_urls(client: FlaskClient):
+    model_reference = uuid.uuid4()
+    payload = {
+        'model_reference': model_reference,
+        'image_urls': ['url-4', 'url-5', 'url-6'],
+    }
+    res = client.post(f'{BASE_URL}/finetune-job', json=payload, headers={'x-api-key': 'vicky-api-key'})
+    assert res.status_code // 100 == 2
+    data = res.json
+    finetune_job_id = data.get('finetune_job_id')
+    assert finetune_job_id is not None
+    payload = {
+        'model_reference': model_reference,
+        'prompt': 'My positive prompt',
+        'negative_prompt': 'My negative prompt'
+    }
+    res = client.post(f'{BASE_URL}/inference-job', json=payload, headers={'x-api-key': 'vicky-api-key'})
+    assert res.status_code // 100 == 2
+    data = res.json
+    inference_job_id = data.get('inference_job_id')
+    assert inference_job_id is not None
+    res = client.get(f'{BASE_URL}/generated-images/{inference_job_id}', headers={'x-api-key': 'vicky-api-key'})
+    assert res.status_code // 100 == 2
+    data = res.json
+    print(data)

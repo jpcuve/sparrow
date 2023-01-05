@@ -88,12 +88,19 @@ class DatabaseSparrow:
         )
         finetune_job_id = conn.execute(ins_1).inserted_primary_key[0]
         for image_url in image_urls:
-            ins_2 = self.finetune_job_image_urls.insert(
+            ins_2 = self.finetune_job_image_urls.insert().values(
                 finetune_job_id=finetune_job_id,
                 url=image_url,
             )
             conn.execute(ins_2)
         return finetune_job_id
+    
+    def find_finetune_job_status(self, conn, user_id, finetune_job_id: int) -> str:
+        sel_1 = (select([self.finetune_jobs.c.status]).where(self.finetune_jobs.c.id == finetune_job_id))
+        rec_1 = conn.execute(sel_1).fetchone()
+        if rec_1 is None:
+            raise RuntimeError("Finetune job not found")
+        return rec_1[0]
 
     def insert_inference_job(self, conn, user_id: int, model_reference: str, prompt: str, negative_prompt: str) -> int:
         # first, find the corresponding finetune job
@@ -105,26 +112,32 @@ class DatabaseSparrow:
             raise RuntimeError("Model not found")
         finetune_job_id = rec_1[0]
         ins_1 = self.inference_jobs.insert().values(
-            user_id=user_id,
             finetune_job_id=finetune_job_id,
             prompt=prompt,
             negative_prompt=negative_prompt,
-            gender='man',  # TODO
             num_inference_steps=150,  # TODO
             num_images_per_prompt=6,  # TODO
-            quidance_scale=6.5,  # TODO
+            guidance_scale=6.5,  # TODO
             status='SUBMITTED',  # TODO
         )
         inference_job_id = conn.execute(ins_1).inserted_primary_key[0]
         return inference_job_id
+    
+    def find_inference_job_status(self, conn, user_id, inference_job_id: int) -> str:
+        sel_1 = (select([self.inference_jobs.c.status]).where(self.inference_jobs.c.id == inference_job_id))
+        rec_1 = conn.execute(sel_1).fetchone()
+        if rec_1 is None:
+            raise RuntimeError("Inference job not found")
+        return rec_1[0]
 
     def find_generated_image_urls(self, conn, user_id: int, inference_job_id: int) -> List[str]:
-        # ok here we have to be careful that the cannot not get urls for images that are not his, hence the join
+        # ok here we have to be careful that the user cannot not get urls for images that are not his, hence the join
         sel_1 = (select([self.generated_images.c.url])
-                 .select_from(self.generated_images.join(self.inference_jobs,
-                                                         onclause=self.generated_images.c.inference_job_id == self.inference_jobs.c.id),
-                              self.inference_jobs.join(self.finetune_jobs,
-                                                       onclause=self.inference_jobs.c.finetune_job_id == self.finetune_jobs.c.id))
+                 .select_from(self.generated_images
+                              .join(self.inference_jobs,
+                                    onclause=self.generated_images.c.inference_job_id == self.inference_jobs.c.id)
+                              .join(self.finetune_jobs,
+                                    onclause=self.inference_jobs.c.finetune_job_id == self.finetune_jobs.c.id))
                  .where(self.generated_images.c.inference_job_id == inference_job_id)
                  .where(self.finetune_jobs.c.user_id == user_id))
         return [rec_1[0] for rec_1 in conn.execute(sel_1).fetchall()]

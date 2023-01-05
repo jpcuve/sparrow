@@ -33,7 +33,7 @@ def api_finetune_job(user_id: int):
 @user_feed
 def api_finetune_job_status(user_id: int, finetune_job_id: int):
     with db_sparrow.engine.connect() as conn:
-        status = db_sparrow.get_finetune_job_status(conn, user_id, finetune_job_id)
+        status = db_sparrow.find_finetune_job_status(conn, user_id, finetune_job_id)
     return jsonify(status=status)
 
 
@@ -47,6 +47,14 @@ def api_inference_job(user_id: int):
     with db_sparrow.engine.connect() as conn:
         inference_job_id = db_sparrow.insert_inference_job(conn, user_id, model_reference, prompt, negative_prompt)
     return jsonify(inference_job_id=inference_job_id)
+
+
+@bp.route('/inference-job-status/<inference_job_id>')
+@user_feed
+def api_inference_job_status(user_id: int, inference_job_id: int):
+    with db_sparrow.engine.connect() as conn:
+        status = db_sparrow.find_inference_job_status(conn, user_id, inference_job_id)
+    return jsonify(status=status)
 
 
 @bp.route('/generated-images/<inference_job_id>')
