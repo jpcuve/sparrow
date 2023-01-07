@@ -7,7 +7,6 @@ from flask_httpauth import HTTPBasicAuth
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import check_password_hash
 
-from sparrow.task import long_running_task
 
 CONFIGURATION_LOCATION = 'FLASK_CONFIG'
 

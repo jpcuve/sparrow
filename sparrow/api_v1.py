@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request
 
 from sparrow.database import db_sparrow
+from sparrow.ext.ext_ec2 import ec2
 from sparrow.helper import user_feed
 
 bp = Blueprint('api_v1', __name__, url_prefix='/api/v1')
@@ -63,3 +64,21 @@ def api_generated_images(user_id: int, inference_job_id: int):
     with db_sparrow.engine.connect() as conn:
         image_urls = db_sparrow.find_generated_image_urls(conn, user_id, inference_job_id)
     return jsonify(image_urls=image_urls)
+
+
+@bp.route('/ec2-instances')
+@user_feed
+def api_ec2_instances(user_id: int):
+    return ec2.find_instances()
+
+
+@bp.route('/ec2-instance/<instance_id>/<verb>')
+@user_feed
+def api_ec2_instance(user_id: int, instance_id: str, verb: str):
+    if verb == 'start':
+        ec2.start_instance(instance_id)
+    elif verb == 'stop':
+        ec2.stop_instance(instance_id)
+    else:
+        raise RuntimeError(f"Unknown command: {verb}")
+    return jsonify(status='ok')

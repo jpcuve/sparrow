@@ -25,7 +25,7 @@ class Ec2:
             DryRun=True
         )
 
-    def find_available_instance(self) -> List[Dict]:
+    def find_instances(self) -> List[Dict]:
         return [{
             'id': instance.id,
             'platform': instance.platform,

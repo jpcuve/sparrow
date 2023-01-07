@@ -1,7 +1,8 @@
 from flask import Blueprint, jsonify
 
-from sparrow import auth, long_running_task
+from sparrow import auth
 from sparrow.ext.ext_runner import runner
+from sparrow.task import long_running_task
 
 bp = Blueprint('web', __name__, url_prefix='/web')
 
