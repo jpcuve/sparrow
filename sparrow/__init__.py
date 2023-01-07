@@ -42,6 +42,10 @@ def create_app() -> Flask:
     from sparrow.ext.ext_ai import ai
     ai.init_app(app)
 
+    # AWS initialization, using AWS_CONFIG_FILE env var
+    from sparrow.ext.ext_ec2 import ec2
+    ec2.init_app(app)
+
     # web application initialization
     from sparrow import web
     app.register_blueprint(web.bp)

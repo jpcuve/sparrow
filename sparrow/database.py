@@ -27,7 +27,9 @@ class DatabaseSparrow:
             'aws_instances', self.metadata,
             Column('id', Integer, Identity(), primary_key=True),
             Column('aws_instance_id', String(32), nullable=False),
-            Column('status', String(16), nullable=False),
+            Column('type', String(32)),
+            Column('public_ip_v4', String(16)),
+            Column('state', String(32)),
             UniqueConstraint('aws_instance_id')
         )
         self.finetune_jobs = Table(
