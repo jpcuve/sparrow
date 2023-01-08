@@ -69,7 +69,8 @@ def api_generated_images(user_id: int, inference_job_id: int):
 @bp.route('/ec2-instances')
 @user_feed
 def api_ec2_instances(user_id: int):
-    return ec2.find_instances()
+    with db_sparrow.engine.connect() as conn:
+        return db_sparrow.find_aws_instances(conn)
 
 
 @bp.route('/ec2-instance/<instance_id>/<verb>')

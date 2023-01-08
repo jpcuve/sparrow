@@ -148,13 +148,12 @@ class DatabaseSparrow:
         sel_1 = (select([self.aws_instances.c.aws_instance_id]))
         aws_instance_ids = [rec_1[0] for rec_1 in conn.execute(sel_1).fetchall()]
         for instance in instances:
-            print(instance.state)
             if instance.id in aws_instance_ids:
                 upd_1 = (self.aws_instances.update().values(
                     type=instance.instance_type,
                     public_ip_v4=instance.public_ip_address,
                     state=instance.state.get('Name')
-                ).where(self.aws_instances.c.aws_instance_id == instance.get('id')))
+                ).where(self.aws_instances.c.aws_instance_id == instance.id))
                 conn.execute(upd_1)
             else:
                 ins_1 = (self.aws_instances.insert().values(
@@ -165,8 +164,20 @@ class DatabaseSparrow:
                 ))
                 conn.execute(ins_1)
 
-    def find_aws_instances(self, conn):
-        return conn.execute(select(self.aws_instances)).fetchall()
+    def find_aws_instances(self, conn) -> List[Dict]:
+        return [{
+            'id': rec[0],
+            'aws_instance_id': rec[1],
+            'type': rec[2],
+            'public_ip_v4': rec[3],
+            'state': rec[4],
+        } for rec in conn.execute(select(
+            self.aws_instances.c.id,
+            self.aws_instances.c.aws_instance_id,
+            self.aws_instances.c.type,
+            self.aws_instances.c.public_ip_v4,
+            self.aws_instances.c.state,
+        )).fetchall()]
 
     def acquire_lock(self, conn, key: str) -> bool:
         sel_1 = (select([self.processes.c.progress]).where(self.processes.c.key == key))
