@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Dict
 
 from flask import Flask
 from sqlalchemy import MetaData, Column, Table, Integer, String, UniqueConstraint, ForeignKey, Text, select, Identity, \
@@ -143,6 +143,30 @@ class DatabaseSparrow:
                  .where(self.generated_images.c.inference_job_id == inference_job_id)
                  .where(self.finetune_jobs.c.user_id == user_id))
         return [rec_1[0] for rec_1 in conn.execute(sel_1).fetchall()]
+
+    def save_aws_instances(self, conn, instances: List):
+        sel_1 = (select([self.aws_instances.c.aws_instance_id]))
+        aws_instance_ids = [rec_1[0] for rec_1 in conn.execute(sel_1).fetchall()]
+        for instance in instances:
+            print(instance.state)
+            if instance.id in aws_instance_ids:
+                upd_1 = (self.aws_instances.update().values(
+                    type=instance.instance_type,
+                    public_ip_v4=instance.public_ip_address,
+                    state=instance.state.get('Name')
+                ).where(self.aws_instances.c.aws_instance_id == instance.get('id')))
+                conn.execute(upd_1)
+            else:
+                ins_1 = (self.aws_instances.insert().values(
+                    aws_instance_id=instance.id,
+                    type=instance.instance_type,
+                    public_ip_v4=instance.public_ip_address,
+                    state=instance.state.get('Name')
+                ))
+                conn.execute(ins_1)
+
+    def find_aws_instances(self, conn):
+        return conn.execute(select(self.aws_instances)).fetchall()
 
     def acquire_lock(self, conn, key: str) -> bool:
         sel_1 = (select([self.processes.c.progress]).where(self.processes.c.key == key))

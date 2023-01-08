@@ -3,6 +3,9 @@ from typing import List, Dict
 from flask import Flask
 import boto3
 
+from sparrow.database import db_sparrow
+
+
 class Ec2:
     def __init__(self, app: Flask = None):
         self.client = boto3.client('ec2')
@@ -26,14 +29,10 @@ class Ec2:
         )
 
     def find_instances(self) -> List[Dict]:
-        return [{
-            'id': instance.id,
-            'platform': instance.platform,
-            'instance_type': instance.instance_type,
-            'public_ip_address': instance.public_ip_address,
-            'ami': instance.image.id,
-            'state': instance.state,
-        } for instance in self.resource.instances.all()]
+        instances = self.resource.instances.all()
+        with db_sparrow.engine.connect() as conn:
+            db_sparrow.save_aws_instances(conn, instances)
+            return db_sparrow.find_aws_instances(conn)
 
 
 ec2 = Ec2()

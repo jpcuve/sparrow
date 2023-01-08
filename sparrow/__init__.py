@@ -79,6 +79,7 @@ def create_app() -> Flask:
 
     @app.errorhandler(Exception)
     def handle_error(ex):
+        app.logger.error(str(ex))
         return jsonify(error=str(ex)), 500
 
     @app.route('/')
