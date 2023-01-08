@@ -96,7 +96,7 @@ class DatabaseSparrow:
             )
             conn.execute(ins_2)
         return finetune_job_id
-    
+
     def find_finetune_job_status(self, conn, user_id, finetune_job_id: int) -> str:
         sel_1 = (select([self.finetune_jobs.c.status]).where(self.finetune_jobs.c.id == finetune_job_id))
         rec_1 = conn.execute(sel_1).fetchone()
@@ -124,7 +124,7 @@ class DatabaseSparrow:
         )
         inference_job_id = conn.execute(ins_1).inserted_primary_key[0]
         return inference_job_id
-    
+
     def find_inference_job_status(self, conn, user_id, inference_job_id: int) -> str:
         sel_1 = (select([self.inference_jobs.c.status]).where(self.inference_jobs.c.id == inference_job_id))
         rec_1 = conn.execute(sel_1).fetchone()
@@ -164,20 +164,17 @@ class DatabaseSparrow:
                 ))
                 conn.execute(ins_1)
 
-    def find_aws_instances(self, conn) -> List[Dict]:
-        return [{
-            'id': rec[0],
-            'aws_instance_id': rec[1],
-            'type': rec[2],
-            'public_ip_v4': rec[3],
-            'state': rec[4],
-        } for rec in conn.execute(select(
+    def find_aws_instances(self, conn, instance_id: str = None) -> List[Dict]:
+        sel_1 = select(
             self.aws_instances.c.id,
             self.aws_instances.c.aws_instance_id,
             self.aws_instances.c.type,
             self.aws_instances.c.public_ip_v4,
             self.aws_instances.c.state,
-        )).fetchall()]
+        )
+        if instance_id is not None:
+            sel_1.where(self.aws_instances.c.id == instance_id)
+        return [{key: rec[index] for index, key in enumerate(['id', 'aws_instance_id', 'type', 'public_ip_v4', 'state'])} for rec in conn.execute(sel_1).fetchall()]
 
     def acquire_lock(self, conn, key: str) -> bool:
         sel_1 = (select([self.processes.c.progress]).where(self.processes.c.key == key))
