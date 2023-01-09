@@ -17,18 +17,6 @@ class Ec2:
     def init_app(self, app: Flask):
         pass
 
-    def start_instance(self, instance_id: str):
-        self.client.start_instances(
-            InstanceIds=[instance_id],
-            DryRun=True
-        )
-
-    def stop_instance(self, instance_id: str):
-        self.client.stop_instances(
-            InstanceIds=[instance_id],
-            DryRun=True
-        )
-
     def find_instances(self) -> List[Dict]:
         instances = self.resource.instances.all()
         with db_sparrow.engine.connect() as conn:
@@ -38,15 +26,18 @@ class Ec2:
 
     def find_available_instance(self) -> str:
         # algorithm as per specs: first find an idle instance, if none available, start a stopped instance
-        # to find an idle instance, I scan all the jobs associated to the instance and verify they are TERMINATED
         instances = self.find_instances()
         for instance in instances:
             if instance['state'] == 'running':
-
+                # to find an idle instance, I verify all its finetune & inference jobs are TERMINATED
                 pass
         for instance in instances:
             if instance['state'] == 'stopped':
-                # start instance
+                # TODO start instance
+                self.client.start_instances(
+                    InstanceIds=[instance['id']],
+                    DryRun=True  # check if permissions ok
+                )
                 return instance['id']
 
 

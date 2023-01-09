@@ -33,14 +33,3 @@ def api_update_inference_job_status(inference_job_id: str):
 @bp.route('/ec2-instances')
 def api_ec2_instances():
     return ec2.find_instances()
-
-
-@bp.route('/ec2-instance/<instance_id>/<verb>')
-def api_ec2_instance(instance_id: str, verb: str):
-    if verb == 'start':
-        ec2.start_instance(instance_id)
-    elif verb == 'stop':
-        ec2.stop_instance(instance_id)
-    else:
-        raise RuntimeError(f"Unknown command: {verb}")
-    return jsonify(status='ok')
