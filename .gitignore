@@ -1,4 +1,5 @@
 # jpc stuff
+.idea
 *.sqlite
 
 # Byte-compiled / optimized / DLL files

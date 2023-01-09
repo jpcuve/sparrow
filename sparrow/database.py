@@ -1,4 +1,5 @@
 import datetime
+import uuid
 from typing import List, Dict
 
 from flask import Flask
@@ -34,7 +35,7 @@ class DatabaseSparrow:
         )
         self.finetune_jobs = Table(
             'finetune_jobs', self.metadata,
-            Column('id', Integer, Identity(), primary_key=True),
+            Column('id', String(36), nullable=False, primary_key=True),
             Column('model_reference', String(255), nullable=False),
             Column('gender', String(16), nullable=False),
             Column('max_train_steps', Integer, nullable=False),
@@ -60,7 +61,7 @@ class DatabaseSparrow:
         )
         self.inference_jobs = Table(
             'inference_jobs', self.metadata,
-            Column('id', Integer, Identity(), primary_key=True),
+            Column('id', String(36), nullable=False, primary_key=True),
             Column('prompt', Text),
             Column('negative_prompt', Text),
             Column('num_inference_steps', Integer, nullable=False),
@@ -99,6 +100,7 @@ class DatabaseSparrow:
 
     def insert_finetune_job(self, conn, user_id: int, model_reference: str, image_urls: List[str]) -> int:
         ins_1 = self.finetune_jobs.insert().values(
+            id=str(uuid.uuid4()),
             user_id=user_id,
             model_reference=model_reference,
             gender='man',  # TODO
@@ -141,6 +143,7 @@ class DatabaseSparrow:
             raise RuntimeError("Model not found")
         finetune_job_id = rec_1[0]
         ins_1 = self.inference_jobs.insert().values(
+            id=str(uuid.uuid4()),
             finetune_job_id=finetune_job_id,
             prompt=prompt,
             negative_prompt=negative_prompt,
