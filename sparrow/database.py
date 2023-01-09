@@ -115,17 +115,18 @@ class DatabaseSparrow:
             conn.execute(ins_2)
         return finetune_job_id
 
-    def insert_finetune_job_event(self, conn, finetune_job_id, status: str, comment: str = None):
+    def insert_finetune_job_event(self, conn, finetune_job_id, status: str,
+                                  progress: float = 0.0, comment: str = None):
         ins_1 = self.finetune_job_events.insert().values(
             created=datetime.datetime.now(),
             finetune_job_id=finetune_job_id,
             status=status,
-            progress=0.0,
+            progress=progress,
             comment=comment
         )
         conn.execute(ins_1)
 
-    def find_finetune_job_status(self, conn, user_id, finetune_job_id: int) -> str:
+    def find_finetune_job_status(self, conn, user_id, finetune_job_id: str) -> str:
         sel_1 = (select(self.finetune_job_events.c.created, self.finetune_job_events.c.status)
                  .where(self.finetune_job_events.c.finetune_job_id == finetune_job_id))
         rec_1 = max(conn.execute(sel_1).fetchall(), key=lambda r: r[0], default=None)
@@ -154,17 +155,18 @@ class DatabaseSparrow:
         inference_job_id = conn.execute(ins_1).inserted_primary_key[0]
         return inference_job_id
 
-    def insert_inference_job_event(self, conn, inference_job_id, status: str, comment: str = None):
+    def insert_inference_job_event(self, conn, inference_job_id, status: str,
+                                   progress: float = 0.0, comment: str = None):
         ins_1 = self.inference_job_events.insert().values(
             created=datetime.datetime.now(),
             inference_job_id=inference_job_id,
             status=status,
-            progress=0.0,
+            progress=progress,
             comment=comment
         )
         conn.execute(ins_1)
 
-    def find_inference_job_status(self, conn, user_id, inference_job_id: int) -> str:
+    def find_inference_job_status(self, conn, user_id, inference_job_id: str) -> str:
         sel_1 = (select(self.inference_job_events.c.created, self.inference_job_events.c.status)
                  .where(self.inference_job_events.c.inference_job_id == inference_job_id))
         rec_1 = max(conn.execute(sel_1).fetchall(), key=lambda r: r[0], default=None)

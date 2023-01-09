@@ -50,6 +50,8 @@ def create_app() -> Flask:
     app.register_blueprint(web.bp)
 
     # blueprint initializations (API endpoints, one file per version)
+    from sparrow import api_internal
+    app.register_blueprint(api_internal.bp)
     from sparrow import api_v1
     app.register_blueprint(api_v1.bp)
 
