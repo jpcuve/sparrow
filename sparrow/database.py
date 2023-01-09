@@ -31,6 +31,7 @@ class DatabaseSparrow:
             Column('type', String(32)),
             Column('public_ip_v4', String(16)),
             Column('state', String(32)),
+            Column('job_reference', String(64)),  # this is some reference of a busy job on the aws instance
             UniqueConstraint('id')
         )
         self.finetune_jobs = Table(
@@ -238,11 +239,18 @@ class DatabaseSparrow:
             self.aws_instances.c.type,
             self.aws_instances.c.public_ip_v4,
             self.aws_instances.c.state,
+            self.aws_instances.c.job_reference,
         )
         if instance_id is not None:
             sel_1.where(self.aws_instances.c.id == instance_id)
-        res = [{key: rec[index] for index, key in enumerate(['id', 'type', 'public_ip_v4', 'state'])} for rec in conn.execute(sel_1).fetchall()]
+        res = [{key: rec[index] for index, key in enumerate(['id', 'type', 'public_ip_v4', 'state', 'job_reference'])}
+               for rec in conn.execute(sel_1).fetchall()]
         return res
+
+    def reference_aws_instance(self, conn, instance_id: str, job_reference: str):
+        upd_1 = (self.aws_instances.update().values(job_reference=job_reference)
+                 .where(self.aws_instances.c.id == instance_id))
+        conn.execute(upd_1)
 
     def acquire_lock(self, conn, key: str) -> bool:
         sel_1 = (select([self.processes.c.progress]).where(self.processes.c.key == key))

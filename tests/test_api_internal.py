@@ -38,3 +38,9 @@ def test_status(client: FlaskClient):
         data = res.json
         read_status = data.get('status')
         assert status == read_status
+    res = client.post(f'{BASE_URL}/update-finetune-job-status/{finetune_job_id}', json={
+        'status': 'SUCCESS',
+        'progress': 1.0,
+        'comment': f'Last status, with progress = 1.0'
+    })
+    assert res.status_code // 100 == 2

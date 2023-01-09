@@ -2,6 +2,6 @@ GET http://localhost:5000/api/v1/
 
 ###
 
-GET http://localhost:5000/api/v1/ec2-instances
+GET http://localhost:5000/api/internal/ec2-instances
 accept: application/json
 x-api-key: vicky-api-key

@@ -28,17 +28,17 @@ class Ec2:
         # algorithm as per specs: first find an idle instance, if none available, start a stopped instance
         instances = self.find_instances()
         for instance in instances:
-            if instance['state'] == 'running':
-                # to find an idle instance, I verify all its finetune & inference jobs are TERMINATED
-                pass
+            if instance['state'] == 'running' and instance['job_reference'] is None:
+                return instance['id']
         for instance in instances:
             if instance['state'] == 'stopped':
-                # TODO start instance
                 self.client.start_instances(
                     InstanceIds=[instance['id']],
                     DryRun=True  # check if permissions ok
                 )
+                # TODO wait for instance to be started?
                 return instance['id']
+
 
 
 ec2 = Ec2()
