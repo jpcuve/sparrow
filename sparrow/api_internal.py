@@ -16,8 +16,8 @@ def api_update_finetune_job_status(finetune_job_id: str):
         with db_sparrow.engine.connect() as conn:
             db_sparrow.insert_finetune_job_event(conn, finetune_job_id, status, progress, comment)
             if progress >= 1.0:
-                finetune_jobs = db_sparrow.find_finetune_jobs(instance_id=finetune_job_id)
-                if len(finetune_jobs > 0):
+                finetune_jobs = db_sparrow.find_finetune_jobs(conn, id=finetune_job_id)
+                if len(finetune_jobs) > 0 and finetune_jobs[0]['aws_instance_id'] is not None:
                     db_sparrow.reference_aws_instance(finetune_jobs[0]['aws_instance_id'], None)
     return jsonify(status='ok')
 
@@ -32,8 +32,8 @@ def api_update_inference_job_status(inference_job_id: str):
         with db_sparrow.engine.connect() as conn:
             db_sparrow.insert_inference_job_event(conn, inference_job_id, status, progress, comment)
             if progress >= 1.0:
-                inference_jobs = db_sparrow.find_inference_jobs(instance_id=inference_job_id)
-                if len(inference_jobs > 0):
+                inference_jobs = db_sparrow.find_inference_jobs(conn, id=inference_job_id)
+                if len(inference_jobs) > 0 and inference_jobs[0]['aws_instance_id'] is not None:
                     db_sparrow.reference_aws_instance(inference_jobs[0]['aws_instance_id'], None)
     return jsonify(status='ok')
 

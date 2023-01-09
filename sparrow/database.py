@@ -117,14 +117,16 @@ class DatabaseSparrow:
             conn.execute(ins_2)
         return finetune_job_id
     
-    def find_finetune_jobs(self, conn, instance_id: str = None) -> List[Dict]:
+    def find_finetune_jobs(self, conn, id: str = None, aws_instance_id: str = None) -> List[Dict]:
         sel_1 = select(
             self.finetune_jobs.c.id,
             self.finetune_jobs.c.user_id,
             self.finetune_jobs.c.aws_instance_id,
         )
-        if instance_id is not None:
-            sel_1.where(self.finetune_jobs.c.aws_instance_id == instance_id)
+        if id is not None:
+            sel_1 = sel_1.where(self.finetune_jobs.c.id == id)
+        if aws_instance_id is not None:
+            sel_1 = sel_1.where(self.finetune_jobs.c.aws_instance_id == aws_instance_id)
         res = [{key: rec[index] for index, key in enumerate(['id', 'user_id', 'aws_instance_id'])} 
                for rec in conn.execute(sel_1).fetchall()]
         return res
@@ -170,14 +172,16 @@ class DatabaseSparrow:
         inference_job_id = conn.execute(ins_1).inserted_primary_key[0]
         return inference_job_id
     
-    def find_inference_jobs(self, conn, instance_id: str = None) -> List[Dict]:
+    def find_inference_jobs(self, conn, id: str = None, aws_instance_id: str = None) -> List[Dict]:
         sel_1 = select(
             self.inference_jobs.c.id,
             self.inference_jobs.c.user_id,
             self.inference_jobs.c.aws_instance_id,
         )
-        if instance_id is not None:
-            sel_1.where(self.inference_jobs.c.aws_instance_id == instance_id)
+        if id is not None:
+            sel_1 = sel_1.where(self.inference_jobs.c.id == id)
+        if aws_instance_id is not None:
+            sel_1.where(self.inference_jobs.c.aws_instance_id == aws_instance_id)
         res = [{key: rec[index] for index, key in enumerate(['id', 'user_id', 'aws_instance_id'])} 
                for rec in conn.execute(sel_1).fetchall()]
         return res
