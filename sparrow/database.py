@@ -1,8 +1,9 @@
+import datetime
 from typing import List, Dict
 
 from flask import Flask
 from sqlalchemy import MetaData, Column, Table, Integer, String, UniqueConstraint, ForeignKey, Text, select, Identity, \
-    Float
+    Float, DateTime
 
 from sparrow import db
 
@@ -25,12 +26,11 @@ class DatabaseSparrow:
         )
         self.aws_instances = Table(
             'aws_instances', self.metadata,
-            Column('id', Integer, Identity(), primary_key=True),
-            Column('aws_instance_id', String(32), nullable=False),
+            Column('id', String(32), primary_key=True),  # is the aws instance id
             Column('type', String(32)),
             Column('public_ip_v4', String(16)),
             Column('state', String(32)),
-            UniqueConstraint('aws_instance_id')
+            UniqueConstraint('id')
         )
         self.finetune_jobs = Table(
             'finetune_jobs', self.metadata,
@@ -38,9 +38,18 @@ class DatabaseSparrow:
             Column('model_reference', String(255), nullable=False),
             Column('gender', String(16), nullable=False),
             Column('max_train_steps', Integer, nullable=False),
-            Column('status', String(16), nullable=False),
             Column('user_id', None, ForeignKey('users.id')),
+            Column('aws_instance_id', None, ForeignKey('aws_instances.id')),
             UniqueConstraint('user_id', 'model_reference')
+        )
+        self.finetune_job_events = Table(
+            'finetune_job_events', self.metadata,
+            Column('id', Integer, Identity(), primary_key=True),
+            Column('created', DateTime, nullable=False),
+            Column('status', String(16), nullable=False),
+            Column('progress', Float, nullable=False),  # from 0.0 to 1.0 (>= 1.0 means finished)
+            Column('comment', Text),
+            Column('finetune_job_id', None, ForeignKey('finetune_jobs.id'))
         )
         self.finetune_job_image_urls = Table(
             'finetune_job_image_urls', self.metadata,
@@ -54,12 +63,20 @@ class DatabaseSparrow:
             Column('id', Integer, Identity(), primary_key=True),
             Column('prompt', Text),
             Column('negative_prompt', Text),
-            # gender??? not the same as finetune?
             Column('num_inference_steps', Integer, nullable=False),
             Column('num_images_per_prompt', Integer, nullable=False),
             Column('guidance_scale', Float, nullable=False),
-            Column('status', String(16), nullable=False),
+            Column('aws_instance_id', None, ForeignKey('aws_instances.id')),
             Column('finetune_job_id', None, ForeignKey('finetune_jobs.id'))
+        )
+        self.inference_job_events = Table(
+            'inference_job_events', self.metadata,
+            Column('id', Integer, Identity(), primary_key=True),
+            Column('created', DateTime, nullable=False),
+            Column('status', String(16), nullable=False),
+            Column('progress', Float, nullable=False),  # from 0.0 to 1.0 (>= 1.0 means finished)
+            Column('comment', Text),
+            Column('inference_job_id', None, ForeignKey('inference_jobs.id'))
         )
         self.generated_images = Table(
             'generated_images', self.metadata,
@@ -86,7 +103,6 @@ class DatabaseSparrow:
             model_reference=model_reference,
             gender='man',  # TODO
             max_train_steps=5000,  # TODO
-            status='SUBMITTED',  # TODO
         )
         finetune_job_id = conn.execute(ins_1).inserted_primary_key[0]
         for image_url in image_urls:
@@ -97,12 +113,23 @@ class DatabaseSparrow:
             conn.execute(ins_2)
         return finetune_job_id
 
+    def insert_finetune_job_event(self, conn, finetune_job_id, status: str, comment: str = None):
+        ins_1 = self.finetune_job_events.insert().values(
+            created=datetime.datetime.now(),
+            finetune_job_id=finetune_job_id,
+            status=status,
+            progress=0.0,
+            comment=comment
+        )
+        conn.execute(ins_1)
+
     def find_finetune_job_status(self, conn, user_id, finetune_job_id: int) -> str:
-        sel_1 = (select([self.finetune_jobs.c.status]).where(self.finetune_jobs.c.id == finetune_job_id))
-        rec_1 = conn.execute(sel_1).fetchone()
+        sel_1 = (select(self.finetune_job_events.c.created, self.finetune_job_events.c.status)
+                 .where(self.finetune_job_events.c.finetune_job_id == finetune_job_id))
+        rec_1 = max(conn.execute(sel_1).fetchall(), key=lambda r: r[0], default=None)
         if rec_1 is None:
             raise RuntimeError("Finetune job not found")
-        return rec_1[0]
+        return rec_1[1]
 
     def insert_inference_job(self, conn, user_id: int, model_reference: str, prompt: str, negative_prompt: str) -> int:
         # first, find the corresponding finetune job
@@ -120,17 +147,27 @@ class DatabaseSparrow:
             num_inference_steps=150,  # TODO
             num_images_per_prompt=6,  # TODO
             guidance_scale=6.5,  # TODO
-            status='SUBMITTED',  # TODO
         )
         inference_job_id = conn.execute(ins_1).inserted_primary_key[0]
         return inference_job_id
 
+    def insert_inference_job_event(self, conn, inference_job_id, status: str, comment: str = None):
+        ins_1 = self.inference_job_events.insert().values(
+            created=datetime.datetime.now(),
+            inference_job_id=inference_job_id,
+            status=status,
+            progress=0.0,
+            comment=comment
+        )
+        conn.execute(ins_1)
+
     def find_inference_job_status(self, conn, user_id, inference_job_id: int) -> str:
-        sel_1 = (select([self.inference_jobs.c.status]).where(self.inference_jobs.c.id == inference_job_id))
-        rec_1 = conn.execute(sel_1).fetchone()
+        sel_1 = (select(self.inference_job_events.c.created, self.inference_job_events.c.status)
+                 .where(self.inference_job_events.c.inference_job_id == inference_job_id))
+        rec_1 = max(conn.execute(sel_1).fetchall(), key=lambda r: r[0], default=None)
         if rec_1 is None:
             raise RuntimeError("Inference job not found")
-        return rec_1[0]
+        return rec_1[1]
 
     def find_generated_image_urls(self, conn, user_id: int, inference_job_id: int) -> List[str]:
         # ok here we have to be careful that the user cannot not get urls for images that are not his, hence the join
@@ -145,7 +182,7 @@ class DatabaseSparrow:
         return [rec_1[0] for rec_1 in conn.execute(sel_1).fetchall()]
 
     def save_aws_instances(self, conn, instances: List):
-        sel_1 = (select([self.aws_instances.c.aws_instance_id]))
+        sel_1 = (select([self.aws_instances.c.id]))
         aws_instance_ids = [rec_1[0] for rec_1 in conn.execute(sel_1).fetchall()]
         for instance in instances:
             if instance.id in aws_instance_ids:
@@ -153,11 +190,11 @@ class DatabaseSparrow:
                     type=instance.instance_type,
                     public_ip_v4=instance.public_ip_address,
                     state=instance.state.get('Name')
-                ).where(self.aws_instances.c.aws_instance_id == instance.id))
+                ).where(self.aws_instances.c.id == instance.id))
                 conn.execute(upd_1)
             else:
                 ins_1 = (self.aws_instances.insert().values(
-                    aws_instance_id=instance.id,
+                    id=instance.id,
                     type=instance.instance_type,
                     public_ip_v4=instance.public_ip_address,
                     state=instance.state.get('Name')
@@ -167,14 +204,14 @@ class DatabaseSparrow:
     def find_aws_instances(self, conn, instance_id: str = None) -> List[Dict]:
         sel_1 = select(
             self.aws_instances.c.id,
-            self.aws_instances.c.aws_instance_id,
             self.aws_instances.c.type,
             self.aws_instances.c.public_ip_v4,
             self.aws_instances.c.state,
         )
         if instance_id is not None:
             sel_1.where(self.aws_instances.c.id == instance_id)
-        return [{key: rec[index] for index, key in enumerate(['id', 'aws_instance_id', 'type', 'public_ip_v4', 'state'])} for rec in conn.execute(sel_1).fetchall()]
+        res = [{key: rec[index] for index, key in enumerate(['id', 'type', 'public_ip_v4', 'state'])} for rec in conn.execute(sel_1).fetchall()]
+        return res
 
     def acquire_lock(self, conn, key: str) -> bool:
         sel_1 = (select([self.processes.c.progress]).where(self.processes.c.key == key))

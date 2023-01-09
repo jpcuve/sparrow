@@ -27,6 +27,7 @@ def api_finetune_job(user_id: int):
     image_urls = payload.get('image_urls')
     with db_sparrow.engine.connect() as conn:
         finetune_job_id = db_sparrow.insert_finetune_job(conn, user_id, model_reference, image_urls)
+        db_sparrow.insert_finetune_job_event(conn, finetune_job_id, 'SUBMITTED')
     return jsonify(finetune_job_id=finetune_job_id)
 
 
@@ -47,6 +48,7 @@ def api_inference_job(user_id: int):
     negative_prompt = payload.get('negative_prompt')
     with db_sparrow.engine.connect() as conn:
         inference_job_id = db_sparrow.insert_inference_job(conn, user_id, model_reference, prompt, negative_prompt)
+        db_sparrow.insert_inference_job_event(conn, inference_job_id, 'SUBMITTED')
     return jsonify(inference_job_id=inference_job_id)
 
 
@@ -69,8 +71,7 @@ def api_generated_images(user_id: int, inference_job_id: int):
 @bp.route('/ec2-instances')
 @user_feed
 def api_ec2_instances(user_id: int):
-    with db_sparrow.engine.connect() as conn:
-        return db_sparrow.find_aws_instances(conn)
+    return ec2.find_instances()
 
 
 @bp.route('/ec2-instance/<instance_id>/<verb>')
