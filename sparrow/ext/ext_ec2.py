@@ -34,8 +34,20 @@ class Ec2:
         with db_sparrow.engine.connect() as conn:
             db_sparrow.save_aws_instances(conn, instances)
             res = db_sparrow.find_aws_instances(conn)
-            print(res)
             return res
+
+    def find_available_instance(self) -> str:
+        # algorithm as per specs: first find an idle instance, if none available, start a stopped instance
+        # to find an idle instance, I scan all the jobs associated to the instance and verify they are TERMINATED
+        instances = self.find_instances()
+        for instance in instances:
+            if instance['state'] == 'running':
+
+                pass
+        for instance in instances:
+            if instance['state'] == 'stopped':
+                # start instance
+                return instance['id']
 
 
 ec2 = Ec2()

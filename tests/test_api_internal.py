@@ -6,6 +6,13 @@ CLIENT_BASE_URL = 'http://localhost:5000/api/v1'
 BASE_URL = 'http://localhost:5000/api/internal'
 
 
+def test_list_instances(client: FlaskClient):
+    res = client.get(f'{BASE_URL}/ec2-instances')
+    assert res.status_code // 100 == 2
+    data = res.json
+    print(data)
+
+
 def test_status(client: FlaskClient):
     # create a finetune job
     payload = {
@@ -25,7 +32,8 @@ def test_status(client: FlaskClient):
             'comment': f'Step n°{progress + 1}'
         })
         assert res.status_code // 100 == 2
-        res = client.get(f'{CLIENT_BASE_URL}/finetune-job-status/{finetune_job_id}', headers={'x-api-key': 'vicky-api-key'})
+        res = client.get(f'{CLIENT_BASE_URL}/finetune-job-status/{finetune_job_id}',
+                         headers={'x-api-key': 'vicky-api-key'})
         assert res.status_code // 100 == 2
         data = res.json
         read_status = data.get('status')

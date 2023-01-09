@@ -98,13 +98,14 @@ class DatabaseSparrow:
         rec_1 = conn.execute(sel_1).fetchone()
         return rec_1[0] if rec_1 is not None else None
 
-    def insert_finetune_job(self, conn, user_id: int, model_reference: str, image_urls: List[str]) -> int:
+    def insert_finetune_job(self, conn, user_id: int, model_reference: str, gender: str,
+                            max_train_steps: int, image_urls: List[str]) -> int:
         ins_1 = self.finetune_jobs.insert().values(
             id=str(uuid.uuid4()),
             user_id=user_id,
             model_reference=model_reference,
-            gender='man',  # TODO
-            max_train_steps=5000,  # TODO
+            gender=gender,
+            max_train_steps=max_train_steps,
         )
         finetune_job_id = conn.execute(ins_1).inserted_primary_key[0]
         for image_url in image_urls:
@@ -134,7 +135,8 @@ class DatabaseSparrow:
             raise RuntimeError("Finetune job not found")
         return rec_1[1]
 
-    def insert_inference_job(self, conn, user_id: int, model_reference: str, prompt: str, negative_prompt: str) -> int:
+    def insert_inference_job(self, conn, user_id: int, model_reference: str, prompt: str, negative_prompt: str,
+                             num_inference_steps: int, num_images_per_prompt: int, guidance_scale: float) -> int:
         # first, find the corresponding finetune job
         sel_1 = (select([self.finetune_jobs.c.id])
                  .where(self.finetune_jobs.c.user_id == user_id)
@@ -148,9 +150,9 @@ class DatabaseSparrow:
             finetune_job_id=finetune_job_id,
             prompt=prompt,
             negative_prompt=negative_prompt,
-            num_inference_steps=150,  # TODO
-            num_images_per_prompt=6,  # TODO
-            guidance_scale=6.5,  # TODO
+            num_inference_steps=num_inference_steps,
+            num_images_per_prompt=num_images_per_prompt,
+            guidance_scale=guidance_scale,
         )
         inference_job_id = conn.execute(ins_1).inserted_primary_key[0]
         return inference_job_id

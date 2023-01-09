@@ -24,9 +24,14 @@ def api_protected(user_id: int):
 def api_finetune_job(user_id: int):
     payload = request.json
     model_reference = payload.get('model_reference')
-    image_urls = payload.get('image_urls')
+    gender = payload.get('gender', '')
+    max_train_steps = payload.get('max_train_steps', 5000)
+    image_urls = payload.get('image_urls', [])
+    if model_reference is None or len(image_urls) == 0:
+        raise RuntimeError('Missing parameter')
     with db_sparrow.engine.connect() as conn:
-        finetune_job_id = db_sparrow.insert_finetune_job(conn, user_id, model_reference, image_urls)
+        finetune_job_id = db_sparrow.insert_finetune_job(
+            conn, user_id, model_reference, gender, max_train_steps, image_urls)
         db_sparrow.insert_finetune_job_event(conn, finetune_job_id, 'SUBMITTED')
     return jsonify(finetune_job_id=finetune_job_id)
 
@@ -46,8 +51,15 @@ def api_inference_job(user_id: int):
     model_reference = payload.get('model_reference')
     prompt = payload.get('prompt')
     negative_prompt = payload.get('negative_prompt')
+    num_inference_steps = payload.get('num_inference_steps', 150)
+    num_images_per_prompt = payload.get('num_images_per_prompt', 6)
+    guidance_scale = payload.get('guidance_scale', 6.5)
+    if model_reference is None or prompt is None or negative_prompt is None:
+        raise RuntimeError('Missing parameter')
     with db_sparrow.engine.connect() as conn:
-        inference_job_id = db_sparrow.insert_inference_job(conn, user_id, model_reference, prompt, negative_prompt)
+        inference_job_id = db_sparrow.insert_inference_job(
+            conn, user_id, model_reference, prompt, negative_prompt, num_inference_steps, num_images_per_prompt,
+            guidance_scale)
         db_sparrow.insert_inference_job_event(conn, inference_job_id, 'SUBMITTED')
     return jsonify(inference_job_id=inference_job_id)
 
@@ -66,21 +78,3 @@ def api_generated_images(user_id: int, inference_job_id: int):
     with db_sparrow.engine.connect() as conn:
         image_urls = db_sparrow.find_generated_image_urls(conn, user_id, inference_job_id)
     return jsonify(image_urls=image_urls)
-
-
-@bp.route('/ec2-instances')
-@user_feed
-def api_ec2_instances(user_id: int):
-    return ec2.find_instances()
-
-
-@bp.route('/ec2-instance/<instance_id>/<verb>')
-@user_feed
-def api_ec2_instance(user_id: int, instance_id: str, verb: str):
-    if verb == 'start':
-        ec2.start_instance(instance_id)
-    elif verb == 'stop':
-        ec2.stop_instance(instance_id)
-    else:
-        raise RuntimeError(f"Unknown command: {verb}")
-    return jsonify(status='ok')
