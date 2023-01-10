@@ -17,7 +17,7 @@ class Ec2:
         if app.development:
             session = boto3.Session(profile_name='hexo')
         else:
-            session = boto3.Session()
+            session = boto3.Session(region_name='ap-south-1')
         self.client = session.client('ec2')
         self.resource = session.resource('ec2')
 
