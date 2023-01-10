@@ -22,7 +22,7 @@ class DatabaseSparrow:
         )
         self.processes = Table(
             'processes', self.metadata,
-            Column('key', String, nullable=False, primary_key=True),
+            Column('reference', String(64), nullable=False, primary_key=True),
             Column('progress', Float, nullable=False)
         )
         self.aws_instances = Table(
@@ -57,8 +57,7 @@ class DatabaseSparrow:
             'finetune_job_image_urls', self.metadata,
             Column('id', Integer, Identity(), primary_key=True),
             Column('url', String(2048), nullable=False),
-            Column('finetune_job_id', None, ForeignKey('finetune_jobs.id')),
-            UniqueConstraint('finetune_job_id', 'url')
+            Column('finetune_job_id', None, ForeignKey('finetune_jobs.id'))
         )
         self.inference_jobs = Table(
             'inference_jobs', self.metadata,
@@ -256,24 +255,24 @@ class DatabaseSparrow:
                  .where(self.aws_instances.c.id == instance_id))
         conn.execute(upd_1)
 
-    def acquire_lock(self, conn, key: str) -> bool:
-        sel_1 = (select([self.processes.c.progress]).where(self.processes.c.key == key))
+    def acquire_lock(self, conn, reference: str) -> bool:
+        sel_1 = (select([self.processes.c.progress]).where(self.processes.c.reference == reference))
         rec_1 = conn.execute(sel_1).fetchone()
         if rec_1 is None:
-            ins_1 = (self.processes.insert().values(key=key, progress=1.0e-10))
+            ins_1 = (self.processes.insert().values(reference=reference, progress=1.0e-10))
             conn.execute(ins_1)
             return True
         elif rec_1[0] == 0:
-            upd_1 = (self.processes.update().values(progress=1.0e-10).where(self.processes.c.key == key))
+            upd_1 = (self.processes.update().values(progress=1.0e-10).where(self.processes.c.reference == reference))
             conn.execute(upd_1)
             return True
         return False
 
-    def release_lock(self, conn, key: str):
-        sel_1 = (select([self.processes.c.progress]).where(self.processes.c.key == key))
+    def release_lock(self, conn, reference: str):
+        sel_1 = (select([self.processes.c.progress]).where(self.processes.c.reference == reference))
         rec_1 = conn.execute(sel_1).fetchone()
         if rec_1 is not None:
-            upd_1 = (self.processes.update().values(progress=0).where(self.processes.c.key == key))
+            upd_1 = (self.processes.update().values(progress=0).where(self.processes.c.reference == reference))
             conn.execute(upd_1)
 
 

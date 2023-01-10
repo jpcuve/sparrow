@@ -14,10 +14,10 @@ class Ec2:
             self.init_app(app)
 
     def init_app(self, app: Flask):
-        if app.development:
-            session = boto3.Session(profile_name='hexo')
-        else:
+        if app.config['CLOUD']:
             session = boto3.Session(region_name='ap-south-1')
+        else:
+            session = boto3.Session(profile_name='hexo')
         self.client = session.client('ec2')
         self.resource = session.resource('ec2')
 
