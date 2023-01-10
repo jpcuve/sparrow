@@ -8,17 +8,18 @@ from sparrow.database import db_sparrow
 
 class Ec2:
     def __init__(self, app: Flask = None):
+        self.client = None
+        self.resource = None
+        if app is not None:
+            self.init_app(app)
+
+    def init_app(self, app: Flask):
         if app.development:
             session = boto3.Session(profile_name='hexo')
         else:
             session = boto3.Session()
         self.client = session.client('ec2')
         self.resource = session.resource('ec2')
-        if app is not None:
-            self.init_app(app)
-
-    def init_app(self, app: Flask):
-        pass
 
     def find_instances(self) -> List[Dict]:
         instances = self.resource.instances.all()
